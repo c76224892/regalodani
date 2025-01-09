@@ -1,0 +1,400 @@
+<!DOCTYPE html> 
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Regalo Dani :)</title>
+  
+  <!-- Google Model Viewer (opcional) -->
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <script nomodule src="https://unpkg.com/@google/model-viewer/dist/model-viewer-legacy.js"></script>
+
+  <link rel="shortcut icon" href="/Logo.png" type="image/x-icon">
+
+  <style>
+    /* Base Styling */
+    body {
+      background-color: black;
+      color: white;
+      font-family: 'Courier New', Courier, monospace;
+      padding: 20px;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Botón inicial y de avance */
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1.2rem;
+      color: #9945FF;
+      background: transparent;
+      border: 2px solid #9945FF;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: rgba(153, 69, 255, 0.1);
+    }
+
+    /* Secciones de juegos */
+    .game-container {
+      display: none;
+      position: relative;
+      margin: 20px auto;
+      max-width: 600px;
+      text-align: center;
+    }
+
+    #maze-status {
+      font-size: 1.2rem;
+      margin-top: 10px;
+    }
+    canvas {
+      border:1px solid #9945FF;
+      background-color:#000;
+    }
+
+    /* Estilos para el minijuego de la canción */
+    .fill-blank {
+      width: 120px;
+      padding: 5px;
+      margin: 0 5px;
+      font-size: 1rem;
+      text-align: center;
+      border: 1px solid #9945FF;
+      background-color: #111;
+      color: white;
+      border-radius: 3px;
+    }
+    #lyrics-game-container {
+      text-align: center;
+      margin: 20px;
+    }
+
+    /* Estilos para la pregunta */
+    #question-container {
+      display: none;
+      text-align: center;
+      margin: 20px;
+    }
+    .option {
+      display: inline-block;
+      margin: 10px;
+      padding: 10px 20px;
+      border: 2px solid #9945FF;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .option.selected {
+      background-color: #9945FF;
+      color: white;
+    }
+
+    /* Estilos para el botón de avance */
+    #advance-button, #next-step-button, #final-button {
+      display: none;
+    }
+
+    /* Estilo de la imagen del regalo */
+    #gift-container img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 20px auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Página Inicial -->
+  <div id="home-screen" class="game-container" style="display: block; text-align: center;">
+    <h1>Regalo Dani :)</h1>
+    <button id="start-button">¡Descubre el regalo!</button>
+  </div>
+
+  <!-- Sección del Laberinto -->
+  <div id="maze-game-container" class="game-container">
+    <canvas id="mazeCanvas" width="300" height="300"></canvas>
+    <p id="maze-status">Usa las flechas del teclado para moverte</p>
+    <button id="advance-button">Sigue avanzando</button>
+  </div>
+
+  <!-- Sección del juego de la canción -->
+  <div id="lyrics-game-container" class="game-container">
+    <h2>Completa la canción</h2>
+    <p>
+      Que de mayor yo quiero ser <input type="text" class="fill-blank" placeholder="..."> <br>
+      Cantante, artista, la <input type="text" class="fill-blank" placeholder="..."> <br>
+      What! What! What!
+    </p>
+    <p>
+      Como la Taylor, como la <input type="text" class="fill-blank" placeholder="..."> <br>
+      Yo quiero ser la motomami de mi <input type="text" class="fill-blank" placeholder="..."> <br>
+      Como la Olivia; como la loba, la <input type="text" class="fill-blank" placeholder="..."> <br>
+      Pero universal como la <input type="text" class="fill-blank" placeholder="..."> <br>
+    </p>
+    <p>
+      Como la Lo-Lo-Lo-Lola, la-la<br>
+      La Lo-Lo-Lo-Lola<br>
+      Como la lo-lo-lo-lo-, ¿<input type="text" class="fill-blank" placeholder="...">?!
+    </p>
+    <button id="check-lyrics">Verificar Respuestas</button>
+    <button id="next-step-button">Sigue avanzando</button>
+  </div>
+
+  <!-- Sección de la pregunta -->
+  <div id="question-container" class="game-container">
+    <p>¿Quién es mejor al RummiKube?</p>
+    <div class="option" data-answer="Dani">Dani</div>
+    <div class="option" data-answer="Pabs">Pabs</div>
+    <button id="final-button">Abre el regalo ¡</button>
+  </div>
+
+  <!-- Contenedor de la imagen del regalo -->
+  <div id="gift-container" class="game-container" style="display: none;">
+    <h2>¡Felicidades, aquí está tu regalo! 🎁</h2>
+    <img src="/mnt/data/image.png" alt="Detalles del vuelo">
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Referencias a elementos
+      const startButton = document.getElementById('start-button');
+      const homeScreen = document.getElementById('home-screen');
+      const mazeContainer = document.getElementById('maze-game-container');
+      const advanceButton = document.getElementById('advance-button');
+      const lyricsContainer = document.getElementById('lyrics-game-container');
+      const nextStepButton = document.getElementById('next-step-button');
+      const questionContainer = document.getElementById('question-container');
+      const finalButton = document.getElementById('final-button');
+      const options = document.querySelectorAll('#question-container .option');
+
+      startButton.addEventListener('click', () => {
+        homeScreen.style.display = 'none';
+        mazeContainer.style.display = 'block';
+        startMazeGame();
+      });
+
+      advanceButton.addEventListener('click', () => {
+        mazeContainer.style.display = 'none';
+        lyricsContainer.style.display = 'block';
+      });
+
+      nextStepButton.addEventListener('click', () => {
+        lyricsContainer.style.display = 'none';
+        alert("Bueno ya que se está haciendo largo y programar esto cansa. (Intro)");
+        questionContainer.style.display = 'block';
+      });
+
+      // Lógica para selección de opciones en la pregunta
+      let selectedAnswer = null;
+      options.forEach(option => {
+        option.addEventListener('click', () => {
+          // Resaltar la opción seleccionada
+          options.forEach(opt => opt.classList.remove('selected'));
+          option.classList.add('selected');
+          selectedAnswer = option.dataset.answer;
+
+          // Si la respuesta es correcta (Pabs), mostrar el botón final
+          if(selectedAnswer === 'Pabs') {
+            finalButton.style.display = 'inline-block';
+          } else {
+            finalButton.style.display = 'none';
+          }
+        });
+      });
+
+      finalButton.addEventListener('click', () => {
+        alert("¡Abre el regalo!");
+        questionContainer.style.display = 'none';
+        const giftContainer = document.getElementById('gift-container');
+        giftContainer.style.display = 'block';
+      });
+
+      function startMazeGame() {
+        const canvas = document.getElementById('mazeCanvas');
+        const ctx = canvas.getContext('2d');
+        const cols = 5;
+        const rows = 5;
+        const cellSize = canvas.width / cols;
+        let maze = [];
+        let player = { x: 0, y: 0 };
+        const goal = { x: cols - 1, y: rows - 1 };
+
+        class Cell {
+          constructor(col, row) {
+            this.col = col;
+            this.row = row;
+            this.walls = [true, true, true, true];
+            this.visited = false;
+          }
+          draw() {
+            const x = this.col * cellSize;
+            const y = this.row * cellSize;
+            ctx.strokeStyle = "#9945FF";
+            ctx.lineWidth = 2;
+            if (this.walls[0]) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + cellSize, y); ctx.stroke(); }
+            if (this.walls[1]) { ctx.beginPath(); ctx.moveTo(x + cellSize, y); ctx.lineTo(x + cellSize, y + cellSize); ctx.stroke(); }
+            if (this.walls[2]) { ctx.beginPath(); ctx.moveTo(x + cellSize, y + cellSize); ctx.lineTo(x, y + cellSize); ctx.stroke(); }
+            if (this.walls[3]) { ctx.beginPath(); ctx.moveTo(x, y + cellSize); ctx.lineTo(x, y); ctx.stroke(); }
+          }
+        }
+
+        function createMazeGrid() {
+          maze = [];
+          for (let r = 0; r < rows; r++) {
+            let row = [];
+            for (let c = 0; c < cols; c++) {
+              row.push(new Cell(c, r));
+            }
+            maze.push(row);
+          }
+        }
+
+        function generateMaze() {
+          createMazeGrid();
+          let stack = [];
+          let current = maze[0][0];
+          current.visited = true;
+
+          do {
+            let next = getUnvisitedNeighbor(current);
+            if (next) {
+              next.visited = true;
+              stack.push(current);
+              removeWalls(current, next);
+              current = next;
+            } else if (stack.length) {
+              current = stack.pop();
+            }
+          } while (stack.length);
+
+          drawMaze();
+        }
+
+        function getUnvisitedNeighbor(cell) {
+          let neighbors = [];
+          const { col, row } = cell;
+          const directions = [
+            { col: col, row: row - 1 },
+            { col: col + 1, row: row },
+            { col: col, row: row + 1 },
+            { col: col - 1, row: row }
+          ];
+          for (let d of directions) {
+            if (d.col >= 0 && d.col < cols && d.row >= 0 && d.row < rows) {
+              let neighbor = maze[d.row][d.col];
+              if (!neighbor.visited) neighbors.push(neighbor);
+            }
+          }
+          if (neighbors.length) {
+            let randIndex = Math.floor(Math.random() * neighbors.length);
+            return neighbors[randIndex];
+          }
+          return undefined;
+        }
+
+        function removeWalls(a, b) {
+          let x = a.col - b.col;
+          let y = a.row - b.row;
+          if (x === 1) { a.walls[3] = false; b.walls[1] = false; }
+          else if (x === -1) { a.walls[1] = false; b.walls[3] = false; }
+          if (y === 1) { a.walls[0] = false; b.walls[2] = false; }
+          else if (y === -1) { a.walls[2] = false; b.walls[0] = false; }
+        }
+
+        function drawMaze() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          for (let row of maze) {
+            for (let cell of row) {
+              cell.draw();
+            }
+          }
+          drawPlayer();
+          drawGoal();
+        }
+
+        function drawPlayer() {
+          ctx.fillStyle = "#9945FF";
+          ctx.fillRect(player.x * cellSize + cellSize/4, player.y * cellSize + cellSize/4, cellSize/2, cellSize/2);
+        }
+
+        function drawGoal() {
+          ctx.fillStyle = "gold";
+          ctx.beginPath();
+          ctx.arc(goal.x * cellSize + cellSize/2, goal.y * cellSize + cellSize/2, cellSize/4, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+
+        function movePlayer(e) {
+          let newX = player.x;
+          let newY = player.y;
+          const currentCell = maze[player.y][player.x];
+          if (e.key === "ArrowUp" && !currentCell.walls[0]) newY--;
+          else if (e.key === "ArrowDown" && !currentCell.walls[2]) newY++;
+          else if (e.key === "ArrowLeft" && !currentCell.walls[3]) newX--;
+          else if (e.key === "ArrowRight" && !currentCell.walls[1]) newX++;
+
+          if (newX >= 0 && newX < cols && newY >= 0 && newY < rows) {
+            player.x = newX;
+            player.y = newY;
+            drawMaze();
+            checkWin();
+          }
+        }
+
+        function checkWin() {
+          if (player.x === goal.x && player.y === goal.y) {
+            document.getElementById('maze-status').textContent = "¡Felicidades! Has encontrado el regalo 🎁";
+            document.removeEventListener('keydown', movePlayer);
+            advanceButton.style.display = 'inline-block';
+          }
+        }
+
+        document.addEventListener('keydown', movePlayer);
+        generateMaze();
+      }
+
+      // Lógica para el minijuego de la canción
+      const fillBlanks = document.querySelectorAll('#lyrics-game-container .fill-blank');
+      const correctAnswers = [
+        'cantista',      // Que de mayor yo quiero ser cantista
+        'protagonista',  // Cantante, artista, la protagonista
+        'Karol',         // Como la Taylor, como la Karol
+        'barrio',        // Yo quiero ser la motomami de mi barrio
+        'Shaki',         // Como la Olivia; como la loba, la Shaki
+        'Lola',          // Pero universal como la Lola
+        'qué'            // Como la lo-lo-lo-lo-, ¿qué?!
+      ];
+
+      const checkButton = document.getElementById('check-lyrics');
+      checkButton.addEventListener('click', () => {
+        let allCorrect = true;
+        fillBlanks.forEach((input, index) => {
+          if (input.value.trim().toLowerCase() !== correctAnswers[index].toLowerCase()) {
+            input.style.borderColor = 'red';
+            allCorrect = false;
+          } else {
+            input.style.borderColor = '#00FF00';
+          }
+        });
+
+        if (allCorrect) {
+          alert('¡Todas las respuestas son correctas! 🎉');
+          nextStepButton.style.display = 'inline-block';
+        } else {
+          alert('Algunas respuestas son incorrectas. ¡Intenta de nuevo!');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
